@@ -1,0 +1,32 @@
+<ROSETTASCRIPTS>
+        <SCOREFXNS>
+           <ScoreFunction name="2015" weights="ref2015"/>
+        </SCOREFXNS>
+        <RESIDUE_SELECTORS>
+        </RESIDUE_SELECTORS>
+        <TASKOPERATIONS>
+        </TASKOPERATIONS>
+        <MOVE_MAP_FACTORIES>
+        </MOVE_MAP_FACTORIES>
+        <SIMPLE_METRICS>
+        </SIMPLE_METRICS>
+        <MOVERS>
+            <MinMover name="min" scorefxn="2015" jump="ALL" chi="1" bb="1" cartesian="0" type="lbfgs_armijo_nonmonotone" tolerance="0.001"/>
+            <ddG name="ddgmover" scorefxn="2015" jump="1" repack_unbound="false" repack_bound="false" relax_bound="false" relax_unbound="true"/>
+        </MOVERS>
+        <FILTERS>
+            <AlaScan name="alascan" scorefxn="2015" jump="1" interface_distance_cutoff="8.0" partner1="1" partner2="1" repeats="5"/>
+            <Ddg name="ddg" confidence="0"/>
+
+        </FILTERS>
+        <MOVERS>
+        </MOVERS>
+        <PROTOCOLS>
+          <Add mover="min"/>
+         <Add mover="ddgmover"/>
+         <Add filter="alascan"/>
+         <Add filter="ddg"/>
+
+        </PROTOCOLS>
+        <OUTPUT />
+</ROSETTASCRIPTS>
