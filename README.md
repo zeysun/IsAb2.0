@@ -15,25 +15,35 @@ Models to relax (all,best,none): best
 ## Structure refinement and local docking of antibody-antigen complex
 If the output of AlphaFold-Multimer has a pLDDT value lower than 70, users can input the sequences of the antibody or antigen to SWISS-MODEL (https://swissmodel.expasy.org/) to generate more accurate 3D structures of the antibody or antigen. For more detailed instructions of how to use SWISS-MODEL, you can find the tutorial on its website.
 Before refining the starting complex with SnugDock, optimize the structures of the antibody and antigen using FastRelax. Relax the structures of the antibody and antigen to generate 10 ensembles for each of them. FastRelax code:
+```
 mpirun -np 8 relax.mpi.linuxgccrelease -s structure.pdb -in:file:fullatom -relax:thorough -relax:constrain_relax_to_start_coords -relax:ramp_constraints false -ex1 -ex2  -use_input_sc -flip_HNQ -no_optH false -nstruct 10
-
+```
 Repack the starting complex. Users need to create list files for antibody and antigen ensembles. The format of ensemble list file can be found in Repack folder. Repack code:
+```
 docking_prepack_protocol.mpi.linuxgccrelease -in:file:s starting_complex.pdb -ex1 -ex2 -partners A_H -ensemble1 antigen_ensemble.list -ensemble2 antibody_ensemble.list -docking:dock_rtmin
+```
 
-Repack step will output the repacked complex, which will serve as input to SnugDock. SnugDock code: 
+Repack step will output the repacked complex, which will serve as input to SnugDock. SnugDock code:
+```
  mpirun -np 64 snugdock.mpi.linuxgccrelease -s repacked_complex.pdb -auto_generate_h3_kink_constraint -h3_loop_csts_hr -spin -dock_pert 3 8 -loops:refine_outer_cycles 2 -loops:max_inner_cycles 20 -detect_disulf false -partners A_H -out:file:scorefile score-snugdock.sf -nstruct 1000 -docking_low_res_score motif_dock_score -mh:path:scores_BB_BB path/to/database/additional_protocol_data/motif_dock/xh_16_ -mh:score:use_ss1 false -mh:score:use_ss2 false -mh:score:use_aa1 true -mh:score:use_aa2 true -value_pH 7.0
-
+```
 If three of the five lowest I_sc results have an I_rms value lower than 4 Å, it indicates that the docking is successful. Users can select the decoy with the lowest I_sc as the final result.
 
 
 # Computational alanine scanning and point mutation
 Possible hotspots (or key residues) on the antibody were predicted by Rosetta alanine scanning program. Among the alanine scanning results, residues with a ΔΔG higher than 1 kcal/mol were selected as hotspots on the antibody. Alanine scanning code:
+```
 mpirun -np 8 rosetta_scripts.mpi.linuxgccrelease -s final_complex.pdb -use_input_sc -nstruct 10 -jd2:ntrials 1 -database /mnt/d/rosetta_src_2021.16.61629_bundle_2/main/database -parser:protocol AlaScan.xml -parser:view -out:overwrite
+```
 
 If users do not have any specific residues they want to mutate, they can mutate the interface residues of the complex. The interface residues of the antibody-antigen complex need to be defined. Define interface code:
+```
 python define_interface.py --side1 A --side2 H --design-side 1 --repack --output final_complex final_complex.pdb
+```
 
 FlexddG is used to perform mutation screening for the interface residues. A resfile needs to be created, which contains the residue numbers (based on PDB) that users want to mutate. The format of resfile can be found in FlexddG folder. Users need to create a folder named “inputs” and create a subfolder inside it. The subfolder contains two files, the input PDB file and a “chain_to_move.txt” file that contains the letter of the chain you want to mutate. FlexddG outputs two folders, ‘analysis_output’ and ‘output_saturation’ folders. “analyze_flex_ddG.py” script can be used to analyze the results of FlexddG. “extract_structures.py” script can be used to extract mutated structures from the results. FlexddG code:
+```
 python run_example.py
 python analyze_flex_ddG.py output_saturation
 python extract_structures.py output_saturation
+```
